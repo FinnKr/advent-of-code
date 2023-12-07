@@ -44,7 +44,7 @@ func solve() int {
 }
 
 func getRaceInfos() [2][]int {
-	file, err := os.Open("./inputP2.txt")
+	file, err := os.Open("./input.txt")
 	if err != nil {
 		log.Fatal(err)
 	}

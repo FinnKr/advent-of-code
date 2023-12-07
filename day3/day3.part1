@@ -1,0 +1,115 @@
+package main
+
+import (
+	"bufio"
+	"fmt"
+	"log"
+	"math"
+	"os"
+	"strconv"
+	"strings"
+)
+
+const SYMBOLS = "*+#$-%@=/&"
+
+func main() {
+	fmt.Println("Sum of part numbers:")
+	fmt.Println(solve())
+}
+
+func solve() int {
+	file, err := os.Open("./day3input.txt")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+
+	var solution int = 0
+
+	var enginePlan [][]string
+
+	for scanner.Scan() {
+		var lineArr []string = strings.Split(scanner.Text(), "")
+		enginePlan = append(enginePlan, lineArr)
+	}
+
+	lineLength := len(enginePlan[0])
+
+	dotLine := [][]string{strings.Split(strings.Repeat(".", lineLength), "")}
+
+	// add "."s as first and last line
+	enginePlan = append(dotLine, enginePlan...)
+	enginePlan = append(enginePlan, dotLine...)
+
+	var beginDigitPos int
+	var endDigitPos int
+
+	for i := 1; i < len(enginePlan); i++ {
+		wasDigit := false
+		beginDigitPos, endDigitPos = -1, -1
+		for pos, char := range enginePlan[i] {
+			if wasDigit == false {
+				if _, err := strconv.Atoi(char); err == nil {
+					beginDigitPos = pos
+					wasDigit = true
+				}
+				if pos != lineLength-1 {
+					continue
+				}
+			}
+			if _, err := strconv.Atoi(char); err == nil {
+				endDigitPos = pos
+				wasDigit = true
+				if pos != lineLength-1 {
+					continue
+				}
+			}
+			// if i == 8 {
+			// 	fmt.Println("Char:")
+			// 	fmt.Println(char)
+			// 	fmt.Println("BeginPos:")
+			// 	fmt.Println(beginDigitPos)
+			// 	fmt.Println("EndPos:")
+			// 	fmt.Println(endDigitPos)
+			// }
+			if beginDigitPos != -1 && endDigitPos == -1 {
+				endDigitPos = beginDigitPos
+			}
+			if beginDigitPos != -1 && endDigitPos != -1 {
+
+				//fmt.Println(enginePlan[i][beginDigitPos : endDigitPos+1])
+				searchDigitBeginPos := int(math.Max(float64(beginDigitPos-1), 0))
+				searchDigitEndPos := int(math.Min(float64(endDigitPos+1), float64(lineLength-1)))
+				compareLineBeforeString := strings.Join(enginePlan[i-1][searchDigitBeginPos:searchDigitEndPos+1], "")
+				compareLineAfterString := strings.Join(enginePlan[i+1][searchDigitBeginPos:searchDigitEndPos+1], "")
+				beforeOrAfter := false
+				//fmt.Printf("\nStartPos: %d\nEndPos: %d\nSearchStart: %d\nSearchEnd: %d\n", beginDigitPos, endDigitPos, searchDigitBeginPos, searchDigitEndPos)
+				//if strings.Join(enginePlan[i][beginDigitPos:endDigitPos+1], "") == "755" {
+				//	fmt.Println(math.Max(float64(beginDigitPos), 0))
+				//}
+				if beginDigitPos != 0 {
+					beforeOrAfter = strings.Contains(SYMBOLS, enginePlan[i][beginDigitPos-1])
+				}
+				if endDigitPos != len(enginePlan[i])-1 && beforeOrAfter == false {
+					beforeOrAfter = strings.Contains(SYMBOLS, enginePlan[i][endDigitPos+1])
+				}
+				if strings.ContainsAny(compareLineBeforeString, SYMBOLS) ||
+					strings.ContainsAny(compareLineAfterString, SYMBOLS) ||
+					beforeOrAfter {
+					sol, err := strconv.Atoi(strings.Join(enginePlan[i][beginDigitPos:endDigitPos+1], ""))
+					if err != nil {
+						log.Fatal(err)
+					}
+					//fmt.Println("Has adjustant symbol")
+					solution += sol
+				}
+				wasDigit = false
+				beginDigitPos, endDigitPos = -1, -1
+			}
+		}
+	}
+
+	return solution
+}

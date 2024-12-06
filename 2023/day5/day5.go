@@ -1,0 +1,138 @@
+package main
+
+import (
+	"bufio"
+	"fmt"
+	"log"
+	"os"
+	"strconv"
+	"strings"
+)
+
+func main() {
+	fmt.Println(solve())
+}
+
+func solve() int {
+	seedRanges, rangesMap := getSeedsAndRangesMap()
+	//fmt.Printf("Seeds: %v\n", seedRanges)
+	//prettyPrintRangesMap(rangesMap)
+
+	var locations []int
+	var seeds []int
+
+	for i := 0; i < len(seedRanges); i += 2 {
+		for j := 0; j < seedRanges[i+1]; j++ {
+			seeds = append(seeds, seedRanges[i]+j)
+		}
+	}
+
+	for _, seed := range seeds {
+		soil := getDestinationNmbr(seed, rangesMap["seed-to-soil map"])
+		fertilizer := getDestinationNmbr(soil, rangesMap["soil-to-fertilizer map"])
+		water := getDestinationNmbr(fertilizer, rangesMap["fertilizer-to-water map"])
+		light := getDestinationNmbr(water, rangesMap["water-to-light map"])
+		temperature := getDestinationNmbr(light, rangesMap["light-to-temperature map"])
+		humidity := getDestinationNmbr(temperature, rangesMap["temperature-to-humidity map"])
+		location := getDestinationNmbr(humidity, rangesMap["humidity-to-location map"])
+
+		locations = append(locations, location)
+	}
+
+	return smallesNmbrInArray(locations)
+}
+
+func getSeedsAndRangesMap() ([]int, map[string][][2][2]int) {
+	file, err := os.Open("./input.txt")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+
+	var seeds []int
+
+	scanner.Scan()
+	seedStrs := strings.Split(strings.Split(scanner.Text(), ": ")[1], " ")
+	for _, seedStr := range seedStrs {
+		seed, err := strconv.Atoi(seedStr)
+		if err != nil {
+			log.Fatal(err)
+		}
+		seeds = append(seeds, seed)
+	}
+
+	rangesMap := make(map[string][][2][2]int)
+	var mapKey string
+
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		if line == "" {
+			continue
+		}
+
+		if strings.Contains(line, ":") {
+			mapKey = line[:len(line)-1]
+			continue
+		}
+
+		rangeInfo := strings.Split(line, " ")
+
+		destStart, err := strconv.Atoi(rangeInfo[0])
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		sourceStart, err := strconv.Atoi(rangeInfo[1])
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		rangeLength, err := strconv.Atoi(rangeInfo[2])
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		destRange := [2]int{destStart, destStart + rangeLength - 1}
+		sourceRange := [2]int{sourceStart, sourceStart + rangeLength - 1}
+		rangesMap[mapKey] = append(rangesMap[mapKey], [2][2]int{destRange, sourceRange})
+	}
+
+	return seeds, rangesMap
+}
+
+func smallesNmbrInArray(arr []int) int {
+	smallest := arr[0]
+	for _, num := range arr[1:] {
+		if num < smallest {
+			smallest = num
+		}
+	}
+	return smallest
+}
+
+func getDestinationNmbr(source int, ranges [][2][2]int) int {
+	var destination int = source
+	for _, destSourceRanges := range ranges {
+		if source >= destSourceRanges[1][0] && source <= destSourceRanges[1][1] {
+			destination = destSourceRanges[0][0] + source - destSourceRanges[1][0]
+			break
+		}
+	}
+	return destination
+}
+
+func prettyPrintRangesMap(rangesMap map[string][][2][2]int) {
+	for k, v := range rangesMap {
+		fmt.Printf("%v: [\n", k)
+		for _, rng := range v {
+			fmt.Println("  [")
+			fmt.Printf("    Destination range: %v - %v\n", rng[0][0], rng[0][1])
+			fmt.Printf("    Source range:      %v - %v\n", rng[1][0], rng[1][1])
+			fmt.Println("  ]")
+		}
+		fmt.Printf("]\n")
+	}
+}

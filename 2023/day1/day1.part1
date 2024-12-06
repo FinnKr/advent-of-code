@@ -1,0 +1,69 @@
+package main
+
+import (
+	"bufio"
+	"errors"
+	"fmt"
+	"log"
+	"os"
+	"strconv"
+	"unicode"
+)
+
+func main() {
+	fmt.Println(solve())
+}
+
+func solve() int {
+	file, err := os.Open("./day1input.txt")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+
+	var solution int = 0
+
+	for scanner.Scan() {
+		var line string = scanner.Text()
+
+		firstDigit, err := findFirstDigitInString(line)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		runes := []rune(line)
+		for i, j := 0, len(runes)-1; i < j; i, j = i+1, j-1 {
+			runes[i], runes[j] = runes[j], runes[i]
+		}
+		var reversedLine string = string(runes)
+
+		lastDigit, err := findFirstDigitInString(reversedLine)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		lineSol, err := strconv.Atoi(firstDigit + lastDigit)
+		if err != nil {
+			log.Fatal(err)
+		}
+		solution += lineSol
+	}
+
+	if err := scanner.Err(); err != nil {
+		log.Fatal(err)
+	}
+
+	return solution
+}
+
+func findFirstDigitInString(s string) (string, error) {
+	for i := 0; i < len(s); i++ {
+		var r rune = rune(s[i])
+		if unicode.IsDigit(r) {
+			return string(r), nil
+		}
+	}
+	return "", errors.New("No digit found")
+}

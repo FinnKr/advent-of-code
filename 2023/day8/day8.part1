@@ -1,0 +1,72 @@
+package main
+
+import (
+	"bufio"
+	"fmt"
+	"log"
+	"os"
+	"strings"
+)
+
+const INPUT_FILE_PATH string = "./input.txt"
+
+type Networkmap map[string][2]string
+
+func main() {
+	fmt.Println(solve())
+}
+
+func solve() int {
+	instructions, networkmap := readMap()
+
+	//fmt.Println(instructions)
+	//fmt.Println(networkmap)
+
+	nodeLabel := "AAA"
+	steps := 0
+
+	for i := 0; i < len(instructions); i++ {
+		steps++
+		//fmt.Printf("Steps: %v\n", steps)
+		//fmt.Println(nodeLabel)
+		//fmt.Println(instructions[i])
+		switch instructions[i] {
+		case "L":
+			nodeLabel = networkmap[nodeLabel][0]
+		case "R":
+			nodeLabel = networkmap[nodeLabel][1]
+		}
+		if nodeLabel == "ZZZ" {
+			break
+		}
+		if i == len(instructions)-1 {
+			i = -1
+		}
+	}
+
+	return steps
+}
+
+func readMap() ([]string, Networkmap) {
+	file, err := os.Open(INPUT_FILE_PATH)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+
+	scanner.Scan()
+	instructions := strings.Split(scanner.Text(), "")
+	scanner.Scan()
+
+	networkmap := make(Networkmap)
+
+	for scanner.Scan() {
+		lineArr := strings.Split(scanner.Text(), " = ")
+		valueArr := strings.Split(lineArr[1][1:len(lineArr[1])-1], ", ")
+		networkmap[lineArr[0]] = [2]string{valueArr[0], valueArr[1]}
+	}
+
+	return instructions, networkmap
+}
